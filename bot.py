@@ -19,6 +19,7 @@ SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_SERVICE_ROLE_KEY = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
 PAYMENT_LINK = os.getenv("PAYMENT_LINK")
 FREE_MESSAGE_LIMIT = int(os.getenv("FREE_MESSAGE_LIMIT", "20"))
+ADMIN_TELEGRAM_ID = os.getenv("ADMIN_TELEGRAM_ID")
 
 if not BOT_TOKEN:
     raise ValueError("Falta BOT_TOKEN en .env")
@@ -30,6 +31,8 @@ if not SUPABASE_SERVICE_ROLE_KEY:
     raise ValueError("Falta SUPABASE_SERVICE_ROLE_KEY en .env")
 if not PAYMENT_LINK:
     raise ValueError("Falta PAYMENT_LINK en .env")
+if not ADMIN_TELEGRAM_ID:
+    raise ValueError("Falta ADMIN_TELEGRAM_ID en .env")
 
 groq_client = Groq(api_key=GROQ_API_KEY)
 
@@ -43,6 +46,9 @@ SUPABASE_HEADERS = {
 def sb_url(table):
     return f"{SUPABASE_URL}/rest/v1/{table}"
 
+def is_admin(user_id):
+    return str(user_id) == str(ADMIN_TELEGRAM_ID)
+
 def supabase_get_user(telegram_id):
     response = requests.get(
         sb_url("pp_users"),
@@ -52,6 +58,7 @@ def supabase_get_user(telegram_id):
     if response.status_code >= 400:
         print("ERROR GET USER:", response.text)
         return None
+
     data = response.json()
     return data[0] if data else None
 
@@ -63,7 +70,13 @@ def supabase_insert_user(user):
         "is_premium": False,
         "free_messages_used": 0,
     }
-    response = requests.post(sb_url("pp_users"), headers=SUPABASE_HEADERS, json=payload)
+
+    response = requests.post(
+        sb_url("pp_users"),
+        headers=SUPABASE_HEADERS,
+        json=payload,
+    )
+
     if response.status_code >= 400:
         print("ERROR INSERT USER:", response.text)
 
@@ -72,17 +85,20 @@ def supabase_update_user(user):
         "username": user.username,
         "first_name": user.first_name,
     }
+
     response = requests.patch(
         sb_url("pp_users"),
         headers=SUPABASE_HEADERS,
         params={"telegram_id": f"eq.{user.id}"},
         json=payload,
     )
+
     if response.status_code >= 400:
         print("ERROR UPDATE USER:", response.text)
 
 def create_or_update_user(user):
     existing = supabase_get_user(str(user.id))
+
     if existing:
         supabase_update_user(user)
     else:
@@ -95,7 +111,13 @@ def save_message(telegram_id, username, role, content):
         "role": role,
         "content": content,
     }
-    response = requests.post(sb_url("pp_messages"), headers=SUPABASE_HEADERS, json=payload)
+
+    response = requests.post(
+        sb_url("pp_messages"),
+        headers=SUPABASE_HEADERS,
+        json=payload,
+    )
+
     if response.status_code >= 400:
         print("ERROR SAVE MESSAGE:", response.text)
 
@@ -110,6 +132,7 @@ def get_recent_messages(telegram_id, limit=10):
             "limit": str(limit),
         },
     )
+
     if response.status_code >= 400:
         print("ERROR GET MESSAGES:", response.text)
         return []
@@ -118,13 +141,21 @@ def get_recent_messages(telegram_id, limit=10):
     data.reverse()
 
     formatted = []
+
     for msg in data:
         if msg.get("role") in ["user", "assistant"]:
-            formatted.append({"role": msg["role"], "content": msg["content"]})
+            formatted.append(
+                {
+                    "role": msg["role"],
+                    "content": msg["content"],
+                }
+            )
+
     return formatted
 
 def increment_free_messages(telegram_id):
     user = supabase_get_user(str(telegram_id))
+
     if not user:
         return 0
 
@@ -136,48 +167,74 @@ def increment_free_messages(telegram_id):
         params={"telegram_id": f"eq.{telegram_id}"},
         json={"free_messages_used": used},
     )
+
     if response.status_code >= 400:
         print("ERROR INCREMENT:", response.text)
 
     return used
 
 SYSTEM_PROMPT = """
-Eres DeepTalk, una IA privada de inteligencia emocional.
+Eres DeepTalk, una inteligencia emocional conversacional privada.
 
-Tu función es escuchar, ordenar ideas y ayudar al usuario a pensar con claridad emocional.
-
-No eres terapeuta.
-No das diagnósticos clínicos.
-No prometes curar ansiedad, depresión, trauma ni conflictos personales.
-No sustituyes ayuda psicológica profesional.
-
-Estilo:
-- Inteligente, sobrio, cálido y directo.
-- Español mexicano natural.
-- Premium, claro, elegante, no cursi.
-- Nada de poesía fumada.
-- Nada de misticismo.
-- Nada de frases dramáticas.
-- Máximo 2 párrafos por respuesta.
-- Máximo 1 pregunta al final.
-- Si el usuario solo saluda, responde breve y sugiere temas concretos.
-
-Puedes ayudar con:
+Tu función es ayudar a las personas a:
 - ordenar pensamientos
-- inteligencia emocional
-- conflictos de pareja
-- comunicación asertiva
-- límites personales
-- autoestima
-- toma de decisiones
-- manejo de enojo
-- estrés
-- análisis de patrones emocionales
-- reflexión sobre personalidad sin diagnosticar
+- reflexionar emocionalmente
+- sentirse escuchadas
+- mejorar claridad mental
+- desarrollar inteligencia emocional
+- hablar sin sentirse juzgadas
 
-Cuando el usuario pida personalidad, aclara que no es diagnóstico y ofrece una lectura orientativa basada en lo que cuente.
+Tono:
+- humano
+- cálido
+- natural
+- directo
+- inteligente
+- tranquilo
+- conversacional
+- español mexicano natural
 
-Si detectas riesgo de autolesión o daño a otros, recomienda buscar ayuda inmediata con emergencias o una persona de confianza.
+No hables como poeta oscuro.
+No uses frases sobre la noche, la oscuridad o el vacío.
+No suenes místico.
+No suenes como terapeuta clínico.
+No uses lenguaje robótico.
+No des respuestas enormes.
+
+Responde en máximo 2 párrafos.
+Haz máximo 1 pregunta al final.
+A veces solo valida la emoción.
+
+Ejemplos de tono:
+“Eso sí puede doler bastante.”
+“Suena a que te sentiste usado.”
+“No estás loco por sentir eso.”
+“Vamos por partes.”
+“Creo que traes varias cosas cargando al mismo tiempo.”
+
+DeepTalk NO debe:
+- afirmar que es terapeuta
+- dar diagnósticos clínicos
+- prometer curar ansiedad, depresión o trauma
+- fomentar violencia
+- fomentar autolesión
+- fomentar odio
+- sexualizar menores
+- participar en roleplay sexual con menores
+- dar consejos ilegales
+- fingir ser humano real
+
+Si alguien menciona menores, abuso sexual, autolesión, suicidio, violencia o conductas ilegales:
+- mantén calma
+- corta cualquier escalada inapropiada
+- recomienda buscar apoyo profesional o ayuda humana inmediata si aplica
+- no profundices en detalles sexuales
+
+Si el usuario pregunta por privacidad:
+di claramente que las conversaciones pueden almacenarse para continuidad y funcionamiento del servicio, y que no comparta datos extremadamente sensibles.
+
+DeepTalk no juzga.
+DeepTalk ayuda a pensar mejor.
 """
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -191,14 +248,18 @@ Una interfaz privada de inteligencia emocional.
 
 Puedes usarlo para pensar con más claridad, desahogarte o entender mejor lo que estás sintiendo.
 
-Algunas cosas que puedes tratar aquí:
+Puedes hablar de:
 
-• Tengo un desacuerdo con mi pareja
-• Quiero comunicarme de forma más asertiva
-• Me cuesta poner límites
-• Quiero entender qué tipo de personalidad tengo
-• Estoy estresado y quiero ordenar mis ideas
-• Quiero tomar una decisión sin actuar desde el impulso
+• Relaciones
+• Ansiedad
+• Sobrepensar
+• Límites personales
+• Autoestima
+• Decisiones difíciles
+• Comunicación asertiva
+• Patrones emocionales
+
+DeepTalk no reemplaza ayuda profesional, pero puede ayudarte a ordenar lo que traes en la cabeza.
 
 Escribe lo que traes en mente.
 """
@@ -216,7 +277,7 @@ Incluye:
 • Memoria emocional
 • Continuidad entre sesiones
 • Respuestas más profundas
-• Acompañamiento 24/7
+• Acceso continuo 24/7
 • Análisis de patrones emocionales
 • Reflexión sobre vínculos, personalidad y decisiones
 
@@ -262,6 +323,184 @@ ID interno:
 Tu acceso será activado después de verificar el pago.
 """
     await update.message.reply_text(text)
+
+async def admin(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not is_admin(update.effective_user.id):
+        await update.message.reply_text("No autorizado.")
+        return
+
+    text = """
+Panel Admin DeepTalk
+
+Comandos:
+
+/stats
+Ver métricas generales
+
+/users
+Ver usuarios recientes
+
+/hot
+Ver usuarios con más uso
+
+/activar TELEGRAM_ID
+Activar premium
+
+/desactivar TELEGRAM_ID
+Quitar premium
+"""
+    await update.message.reply_text(text)
+
+async def stats(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not is_admin(update.effective_user.id):
+        await update.message.reply_text("No autorizado.")
+        return
+
+    users_res = requests.get(
+        sb_url("pp_users"),
+        headers=SUPABASE_HEADERS,
+        params={"select": "*"},
+    )
+
+    messages_res = requests.get(
+        sb_url("pp_messages"),
+        headers=SUPABASE_HEADERS,
+        params={"select": "*"},
+    )
+
+    users = users_res.json() if users_res.status_code < 400 else []
+    messages = messages_res.json() if messages_res.status_code < 400 else []
+
+    total_users = len(users)
+    premium_users = len([u for u in users if u.get("is_premium")])
+    active_users = len([u for u in users if int(u.get("free_messages_used") or 0) > 0])
+    hot_users = len([u for u in users if int(u.get("free_messages_used") or 0) >= 5])
+    total_messages = len(messages)
+
+    text = f"""
+DeepTalk Stats
+
+Usuarios totales: {total_users}
+Usuarios activos: {active_users}
+Usuarios calientes 5+: {hot_users}
+Premium: {premium_users}
+Mensajes totales: {total_messages}
+"""
+    await update.message.reply_text(text)
+
+async def users(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not is_admin(update.effective_user.id):
+        await update.message.reply_text("No autorizado.")
+        return
+
+    res = requests.get(
+        sb_url("pp_users"),
+        headers=SUPABASE_HEADERS,
+        params={
+            "select": "telegram_id,username,first_name,is_premium,free_messages_used,created_at",
+            "order": "created_at.desc",
+            "limit": "15",
+        },
+    )
+
+    if res.status_code >= 400:
+        await update.message.reply_text("Error consultando usuarios.")
+        return
+
+    data = res.json()
+
+    text = "Usuarios recientes:\n\n"
+
+    for u in data:
+        premium = "PLUS" if u.get("is_premium") else "FREE"
+        username = f"@{u.get('username')}" if u.get("username") else "sin username"
+        name = u.get("first_name") or "sin nombre"
+        used = u.get("free_messages_used") or 0
+
+        text += f"{premium} | {used} msgs\n{name} | {username}\nID: {u.get('telegram_id')}\n\n"
+
+    await update.message.reply_text(text)
+
+async def hot(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not is_admin(update.effective_user.id):
+        await update.message.reply_text("No autorizado.")
+        return
+
+    res = requests.get(
+        sb_url("pp_users"),
+        headers=SUPABASE_HEADERS,
+        params={
+            "select": "telegram_id,username,first_name,is_premium,free_messages_used,created_at",
+            "order": "free_messages_used.desc",
+            "limit": "15",
+        },
+    )
+
+    if res.status_code >= 400:
+        await update.message.reply_text("Error consultando usuarios.")
+        return
+
+    data = res.json()
+
+    text = "Usuarios con más uso:\n\n"
+
+    for u in data:
+        premium = "PLUS" if u.get("is_premium") else "FREE"
+        username = f"@{u.get('username')}" if u.get("username") else "sin username"
+        name = u.get("first_name") or "sin nombre"
+        used = u.get("free_messages_used") or 0
+
+        text += f"{premium} | {used} msgs\n{name} | {username}\nID: {u.get('telegram_id')}\n\n"
+
+    await update.message.reply_text(text)
+
+async def activar(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not is_admin(update.effective_user.id):
+        await update.message.reply_text("No autorizado.")
+        return
+
+    if not context.args:
+        await update.message.reply_text("Usa: /activar TELEGRAM_ID")
+        return
+
+    telegram_id = context.args[0]
+
+    res = requests.patch(
+        sb_url("pp_users"),
+        headers=SUPABASE_HEADERS,
+        params={"telegram_id": f"eq.{telegram_id}"},
+        json={"is_premium": True},
+    )
+
+    if res.status_code >= 400:
+        await update.message.reply_text("Error activando premium.")
+        return
+
+    await update.message.reply_text(f"Premium activado para {telegram_id}.")
+
+async def desactivar(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not is_admin(update.effective_user.id):
+        await update.message.reply_text("No autorizado.")
+        return
+
+    if not context.args:
+        await update.message.reply_text("Usa: /desactivar TELEGRAM_ID")
+        return
+
+    telegram_id = context.args[0]
+
+    res = requests.patch(
+        sb_url("pp_users"),
+        headers=SUPABASE_HEADERS,
+        params={"telegram_id": f"eq.{telegram_id}"},
+        json={"is_premium": False},
+    )
+
+    if res.status_code >= 400:
+        await update.message.reply_text("Error desactivando premium.")
+        return
+
+    await update.message.reply_text(f"Premium desactivado para {telegram_id}.")
 
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
@@ -335,8 +574,16 @@ app = ApplicationBuilder().token(BOT_TOKEN).build()
 app.add_handler(CommandHandler("start", start))
 app.add_handler(CommandHandler("premium", premium))
 app.add_handler(CommandHandler("ayuda", ayuda))
+
+app.add_handler(CommandHandler("admin", admin))
+app.add_handler(CommandHandler("stats", stats))
+app.add_handler(CommandHandler("users", users))
+app.add_handler(CommandHandler("hot", hot))
+app.add_handler(CommandHandler("activar", activar))
+app.add_handler(CommandHandler("desactivar", desactivar))
+
 app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
 
-print("DeepTalk está corriendo...")
+print("DeepTalk ADMIN VERSION está corriendo...")
 
 app.run_polling()
