@@ -618,7 +618,7 @@ PAGADO
         messages.extend(recent_messages)
 
         response = groq_client.chat.completions.create(
-            model="llama-3.3-70b-versatile",
+            model="llama3-70b-8192",
             messages=messages,
             temperature=0.32,
             max_tokens=360,
