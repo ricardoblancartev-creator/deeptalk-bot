@@ -176,65 +176,48 @@ def increment_free_messages(telegram_id):
 SYSTEM_PROMPT = """
 Eres DeepTalk, una inteligencia emocional conversacional privada.
 
-Tu función es ayudar a las personas a:
-- ordenar pensamientos
-- reflexionar emocionalmente
-- sentirse escuchadas
-- mejorar claridad mental
-- desarrollar inteligencia emocional
-- hablar sin sentirse juzgadas
+Tu función es ayudar al usuario a pensar con más claridad, ordenar emociones y confrontar lo que está evitando.
 
 Tono:
+- breve
 - humano
-- cálido
-- natural
 - directo
+- cálido
 - inteligente
-- tranquilo
-- conversacional
-- español mexicano natural
+- mexicano natural
+- nada místico
+- nada poético
+- nada de "oscuridad", "noche", "vacío" o frases fumadas
+- máximo 2 párrafos
+- máximo 1 pregunta al final
 
-No hables como poeta oscuro.
-No uses frases sobre la noche, la oscuridad o el vacío.
-No suenes místico.
-No suenes como terapeuta clínico.
-No uses lenguaje robótico.
-No des respuestas enormes.
+Estilo:
+Más como alguien emocionalmente inteligente que escucha bien.
+Menos como terapeuta formal.
 
-Responde en máximo 2 párrafos.
-Haz máximo 1 pregunta al final.
-A veces solo valida la emoción.
+Puedes ser un poco directivo cuando convenga:
+- "vamos por partes"
+- "eso sí duele"
+- "ahí hay algo que no estás queriendo mirar"
+- "no huyas de esa pregunta"
+- "eso suena a que te sentiste usado"
+- "creo que estás confundiendo costumbre con amor"
+- "antes de actuar, separa lo que sientes de lo que realmente pasó"
 
-Ejemplos de tono:
-“Eso sí puede doler bastante.”
-“Suena a que te sentiste usado.”
-“No estás loco por sentir eso.”
-“Vamos por partes.”
-“Creo que traes varias cosas cargando al mismo tiempo.”
+No des diagnósticos clínicos.
+No digas que eres terapeuta.
+No prometas curar ansiedad, depresión o trauma.
+No reemplazas ayuda profesional.
 
-DeepTalk NO debe:
-- afirmar que es terapeuta
-- dar diagnósticos clínicos
-- prometer curar ansiedad, depresión o trauma
-- fomentar violencia
-- fomentar autolesión
-- fomentar odio
-- sexualizar menores
-- participar en roleplay sexual con menores
-- dar consejos ilegales
-- fingir ser humano real
+Seguridad:
+- No sexualices menores.
+- No participes en roleplay sexual con menores.
+- No ayudes con violencia, autolesión, abuso o delitos.
+- Si hay abuso, autolesión, suicidio, violencia o menores en contexto sexual, corta la escalada y recomienda buscar ayuda humana/profesional inmediata.
+- No profundices en detalles sexuales con menores.
 
-Si alguien menciona menores, abuso sexual, autolesión, suicidio, violencia o conductas ilegales:
-- mantén calma
-- corta cualquier escalada inapropiada
-- recomienda buscar apoyo profesional o ayuda humana inmediata si aplica
-- no profundices en detalles sexuales
-
-Si el usuario pregunta por privacidad:
-di claramente que las conversaciones pueden almacenarse para continuidad y funcionamiento del servicio, y que no comparta datos extremadamente sensibles.
-
-DeepTalk no juzga.
-DeepTalk ayuda a pensar mejor.
+Privacidad:
+Si preguntan por privacidad, di que las conversaciones pueden almacenarse para continuidad y funcionamiento del servicio. Recomienda no compartir datos extremadamente sensibles.
 """
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -246,20 +229,20 @@ Bienvenido a DeepTalk.
 
 Una interfaz privada de inteligencia emocional.
 
-Puedes usarlo para pensar con más claridad, desahogarte o entender mejor lo que estás sintiendo.
+Puedes usarlo para:
+• ordenar lo que sientes
+• hablar sin sentirte juzgado
+• pensar con más claridad
+• confrontar lo que estás evitando
+• entender patrones emocionales
 
-Puedes hablar de:
+Ejemplos:
+“¿Por qué me cuesta soltar a alguien?”
+“¿Cómo dejo de sobrepensar?”
+“¿Estoy actuando desde el miedo?”
+“¿Cómo pongo límites sin sentir culpa?”
 
-• Relaciones
-• Ansiedad
-• Sobrepensar
-• Límites personales
-• Autoestima
-• Decisiones difíciles
-• Comunicación asertiva
-• Patrones emocionales
-
-DeepTalk no reemplaza ayuda profesional, pero puede ayudarte a ordenar lo que traes en la cabeza.
+DeepTalk no reemplaza ayuda profesional.
 
 Escribe lo que traes en mente.
 """
@@ -269,7 +252,8 @@ async def premium(update: Update, context: ContextTypes.DEFAULT_TYPE):
     text = f"""
 DeepTalk Plus
 
-Acceso privado mensual: $99 MXN
+México: $99 MXN / mes
+Internacional: $5 USD / mes
 
 Incluye:
 
@@ -277,11 +261,11 @@ Incluye:
 • Memoria emocional
 • Continuidad entre sesiones
 • Respuestas más profundas
-• Acceso continuo 24/7
+• Acceso 24/7
 • Análisis de patrones emocionales
 • Reflexión sobre vínculos, personalidad y decisiones
 
-Activa tu acceso aquí:
+Activa aquí:
 
 {PAYMENT_LINK}
 
@@ -312,7 +296,7 @@ async def pagado(update: Update, context: ContextTypes.DEFAULT_TYPE):
     text = f"""
 Perfecto.
 
-Envíame captura de tu pago aquí mismo.
+Ahora envía aquí mismo la captura de tu pago.
 
 Usuario:
 {username_text}
@@ -320,9 +304,60 @@ Usuario:
 ID interno:
 {user.id}
 
-Tu acceso será activado después de verificar el pago.
+Cuando verifiquemos tu pago, activaremos DeepTalk Plus.
 """
     await update.message.reply_text(text)
+
+    await context.bot.send_message(
+        chat_id=int(ADMIN_TELEGRAM_ID),
+        text=f"""
+Solicitud de pago recibida.
+
+Usuario:
+{username_text}
+
+ID:
+{user.id}
+
+Espera captura de comprobante.
+"""
+    )
+
+async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user = update.effective_user
+    create_or_update_user(user)
+
+    username_text = f"@{user.username}" if user.username else "sin username"
+
+    save_message(
+        user.id,
+        user.username,
+        "user",
+        "[PHOTO_SENT]"
+    )
+
+    await context.bot.send_message(
+        chat_id=int(ADMIN_TELEGRAM_ID),
+        text=f"""
+Comprobante/foto recibido.
+
+Usuario:
+{username_text}
+
+ID:
+{user.id}
+"""
+    )
+
+    await context.bot.forward_message(
+        chat_id=int(ADMIN_TELEGRAM_ID),
+        from_chat_id=update.message.chat_id,
+        message_id=update.message.message_id,
+    )
+
+    await update.message.reply_text(
+        "Recibido. Revisaremos tu comprobante y activaremos tu acceso manualmente."
+    )
 
 async def admin(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not is_admin(update.effective_user.id):
@@ -348,6 +383,9 @@ Activar premium
 
 /desactivar TELEGRAM_ID
 Quitar premium
+
+/mensaje TELEGRAM_ID texto
+Enviar mensaje manual a un usuario
 """
     await update.message.reply_text(text)
 
@@ -478,6 +516,14 @@ async def activar(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     await update.message.reply_text(f"Premium activado para {telegram_id}.")
 
+    try:
+        await context.bot.send_message(
+            chat_id=int(telegram_id),
+            text="DeepTalk Plus ha sido activado. Ya tienes acceso extendido."
+        )
+    except Exception as e:
+        print("ERROR NOTIFY USER:", e)
+
 async def desactivar(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not is_admin(update.effective_user.id):
         await update.message.reply_text("No autorizado.")
@@ -501,6 +547,28 @@ async def desactivar(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
 
     await update.message.reply_text(f"Premium desactivado para {telegram_id}.")
+
+async def mensaje(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not is_admin(update.effective_user.id):
+        await update.message.reply_text("No autorizado.")
+        return
+
+    if len(context.args) < 2:
+        await update.message.reply_text("Usa: /mensaje TELEGRAM_ID texto")
+        return
+
+    telegram_id = context.args[0]
+    text = " ".join(context.args[1:])
+
+    try:
+        await context.bot.send_message(
+            chat_id=int(telegram_id),
+            text=text
+        )
+        await update.message.reply_text(f"Mensaje enviado a {telegram_id}.")
+    except Exception as e:
+        print("ERROR SEND MESSAGE:", e)
+        await update.message.reply_text("No se pudo enviar el mensaje.")
 
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
@@ -552,8 +620,8 @@ PAGADO
         response = groq_client.chat.completions.create(
             model="llama-3.3-70b-versatile",
             messages=messages,
-            temperature=0.35,
-            max_tokens=420,
+            temperature=0.32,
+            max_tokens=360,
         )
 
         reply = response.choices[0].message.content
@@ -581,7 +649,9 @@ app.add_handler(CommandHandler("users", users))
 app.add_handler(CommandHandler("hot", hot))
 app.add_handler(CommandHandler("activar", activar))
 app.add_handler(CommandHandler("desactivar", desactivar))
+app.add_handler(CommandHandler("mensaje", mensaje))
 
+app.add_handler(MessageHandler(filters.PHOTO, handle_photo))
 app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
 
 print("DeepTalk ADMIN VERSION está corriendo...")
