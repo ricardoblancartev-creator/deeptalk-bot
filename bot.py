@@ -78,16 +78,6 @@ Tone:
 - natural
 - direct when necessary
 
-Important:
-- respond in the SAME language as the user
-- if the user writes in English, reply in natural English
-- if the user writes in Spanish, reply in natural Spanish
-- avoid robotic language
-- avoid sounding like a therapist
-- avoid sounding mystical
-- avoid sounding poetic
-- avoid repetitive validation
-
 DeepTalk should feel:
 - psychologically insightful
 - emotionally engaging
@@ -170,6 +160,7 @@ def supabase_insert_user(user):
         "first_name": user.first_name,
         "is_premium": False,
         "free_messages_used": 0,
+        "language": "en"
     }
 
     response = requests.post(
@@ -297,26 +288,10 @@ Welcome to DeepTalk.
 
 A private AI space for emotional clarity.
 
-People use DeepTalk to:
-• vent
-• process emotions
-• think more clearly
-• understand patterns
-• reduce overthinking
-• reflect without judgment
+Select your language:
 
-Common topics:
-• relationships
-• loneliness
-• anxiety
-• emotional confusion
-• difficult decisions
-• attachment
-• self-esteem
-
-DeepTalk is not therapy.
-
-Start typing whatever is on your mind.
+🇺🇸 English → type EN
+🇲🇽 Español → escribe ES
 """
 
     await update.message.reply_text(text)
@@ -369,9 +344,9 @@ async def ayuda(update: Update, context: ContextTypes.DEFAULT_TYPE):
     text = """
 Commands:
 
-/start — Start DeepTalk
-/premium — Activate DeepTalk Plus
-/ayuda — Help
+/start
+/premium
+/ayuda
 """
 
     await update.message.reply_text(text)
@@ -386,8 +361,6 @@ async def admin(update: Update, context: ContextTypes.DEFAULT_TYPE):
 Panel Admin DeepTalk
 
 /stats
-/users
-/hot
 /activar TELEGRAM_ID
 /desactivar TELEGRAM_ID
 """
@@ -488,11 +461,53 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     create_or_update_user(user)
 
+    normalized = user_message.upper().strip()
+
+    if normalized == "EN":
+
+        requests.patch(
+            sb_url("pp_users"),
+            headers=SUPABASE_HEADERS,
+            params={
+                "telegram_id": f"eq.{telegram_id}"
+            },
+            json={
+                "language": "en"
+            },
+        )
+
+        await update.message.reply_text(
+            "Language set to English."
+        )
+
+        return
+
+    if normalized == "ES":
+
+        requests.patch(
+            sb_url("pp_users"),
+            headers=SUPABASE_HEADERS,
+            params={
+                "telegram_id": f"eq.{telegram_id}"
+            },
+            json={
+                "language": "es"
+            },
+        )
+
+        await update.message.reply_text(
+            "Idioma cambiado a español."
+        )
+
+        return
+
     db_user = supabase_get_user(telegram_id)
 
     if not db_user:
-        await update.message.reply_text("Error creando usuario.")
+        await update.message.reply_text("Error creating user.")
         return
+
+    language = db_user.get("language", "en")
 
     is_premium = bool(db_user.get("is_premium", False))
 
@@ -523,9 +538,17 @@ Upgrade to DeepTalk Plus:
 
         recent_messages = get_recent_messages(telegram_id)
 
+        language_instruction = ""
+
+        if language == "es":
+            language_instruction = "Respond ONLY in Spanish."
+
+        if language == "en":
+            language_instruction = "Respond ONLY in English."
+
         messages = [{
             "role": "system",
-            "content": SYSTEM_PROMPT
+            "content": SYSTEM_PROMPT + "\n" + language_instruction
         }]
 
         messages.extend(recent_messages)
