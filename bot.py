@@ -479,38 +479,74 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     create_or_update_user(user)
 
-    normalized = user_message.upper().strip()
+normalized = user_message.upper().strip()
 
-    if normalized == "EN":
+if normalized == "EN":
 
-        requests.patch(
-            sb_url("pp_users"),
-            headers=SUPABASE_HEADERS,
-            params={
-                "telegram_id": f"eq.{telegram_id}"
-            },
-            json={
-                "language": "en"
-            },
-        )
+    requests.patch(
+        sb_url("pp_users"),
+        headers=SUPABASE_HEADERS,
+        params={
+            "telegram_id": f"eq.{telegram_id}"
+        },
+        json={
+            "language": "en"
+        },
+    )
 
-        requests.delete(
-            sb_url("pp_messages"),
-            headers=SUPABASE_HEADERS,
-            params={
-                "telegram_id": f"eq.{telegram_id}"
-            },
-        )
+    requests.delete(
+        sb_url("pp_messages"),
+        headers=SUPABASE_HEADERS,
+        params={
+            "telegram_id": f"eq.{telegram_id}"
+        },
+    )
 
-        await update.message.reply_text(
+    await update.message.reply_text(
 """
 Language set to English.
 
-You can now start talking naturally.
-"""
-        )
+What’s been stuck in your head lately?
 
-        return
+You can vent, overthink, obsess, rant, spiral or just talk honestly.
+"""
+    )
+
+    return
+
+if normalized == "ES":
+
+    requests.patch(
+        sb_url("pp_users"),
+        headers=SUPABASE_HEADERS,
+        params={
+            "telegram_id": f"eq.{telegram_id}"
+        },
+        json={
+            "language": "es"
+        },
+    )
+
+    requests.delete(
+        sb_url("pp_messages"),
+        headers=SUPABASE_HEADERS,
+        params={
+            "telegram_id": f"eq.{telegram_id}"
+        },
+    )
+
+    await update.message.reply_text(
+"""
+Idioma cambiado a español.
+
+¿Qué es eso que no has podido sacar de tu cabeza últimamente?
+
+Puedes desahogarte, sobrepensar, obsesionarte o simplemente hablar sin filtro.
+"""
+    )
+
+    return
+
 
     if normalized == "ES":
 
