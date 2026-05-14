@@ -286,15 +286,33 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     text = """
 Welcome to DeepTalk.
 
-A private AI space for emotional clarity.
+A private AI space to think more clearly, vent, and understand yourself better.
+
+You can talk about:
+• overthinking
+• relationships
+• anxiety
+• loneliness
+• attachment
+• emotional confusion
+• difficult decisions
+• habits
+• motivation
 
 Select your language:
 
 🇺🇸 English → type EN
 🇲🇽 Español → escribe ES
+
+Example:
+“Why do I overthink everything?”
+“Why can’t I let this person go?”
+“Me siento perdido.”
+“No puedo dejar de pensar.”
 """
 
     await update.message.reply_text(text)
+
 
 async def premium(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
