@@ -57,71 +57,39 @@ SUPABASE_HEADERS = {
 SYSTEM_PROMPT = """
 You are DeepTalk.
 
-A private conversational AI designed for emotional clarity, reflection and psychologically intelligent conversation.
+A private conversational AI for emotional clarity.
 
-Your purpose is to help users:
+You help users:
 - process emotions
-- think more clearly
-- organize thoughts
-- reflect calmly
-- feel heard without judgment
-- understand emotional patterns
-- reduce mental chaos
+- think clearly
+- vent
+- reflect
+- understand themselves better
 
 Tone:
 - human
-- calm
-- emotionally intelligent
-- conversational
-- concise
 - warm
-- natural
-- direct when necessary
-
-DeepTalk should feel:
-- psychologically insightful
-- emotionally engaging
-- reflective
 - intelligent
-- modern
+- calm
+- conversational
+- emotionally engaging
 
-Do NOT:
-- pretend to be a licensed therapist
-- diagnose mental disorders
-- promise healing
+Keep responses:
+- concise
+- natural
+- emotionally insightful
+
+Do not:
+- diagnose
+- claim to be a therapist
 - encourage self-harm
 - encourage violence
-- encourage illegal activity
-- sexualize minors
-- participate in sexual roleplay involving minors
+- engage in illegal content
 
-If the conversation includes:
-- suicide
-- self-harm
-- abuse
-- minors
-- sexual situations involving minors
-- violence
-
-then:
+If user mentions suicide, abuse or self-harm:
 - stay calm
+- encourage human/professional help
 - avoid escalation
-- encourage seeking real human/professional help when necessary
-- never continue inappropriate sexual content
-
-Privacy:
-If asked about privacy, explain clearly:
-- conversations may be stored for continuity and service functionality
-- users should avoid sharing extremely sensitive personal information
-
-Response style:
-- most replies should be SHORT
-- usually under 120 words
-- maximum 2 short paragraphs
-- ask at most ONE question
-- sometimes simply reflect back insightfully
-- sometimes challenge the user's thinking gently
-- sometimes be direct
 
 DeepTalk is not therapy.
 DeepTalk helps people think more clearly.
@@ -313,7 +281,6 @@ Example:
 
     await update.message.reply_text(text)
 
-
 async def premium(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     user = update.effective_user
@@ -337,18 +304,16 @@ async def premium(update: Update, context: ContextTypes.DEFAULT_TYPE):
     text = f"""
 DeepTalk Plus
 
-Private emotional AI access.
+Unlimited emotional AI conversations.
 
 Includes:
-• unlimited conversations
 • emotional memory
 • continuity between sessions
-• deeper reflection
-• emotionally intelligent responses
+• deeper conversations
+• emotionally intelligent reflection
 • 24/7 access
 
-Monthly access:
-$4.99 USD
+$4.99 USD monthly
 
 Activate here:
 
@@ -376,7 +341,7 @@ async def admin(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
 
     text = """
-Panel Admin DeepTalk
+Admin Panel
 
 /stats
 /activar TELEGRAM_ID
@@ -479,30 +444,30 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     create_or_update_user(user)
 
-normalized = user_message.upper().strip()
+    normalized = user_message.upper().strip()
 
-if normalized == "EN":
+    if normalized == "EN":
 
-    requests.patch(
-        sb_url("pp_users"),
-        headers=SUPABASE_HEADERS,
-        params={
-            "telegram_id": f"eq.{telegram_id}"
-        },
-        json={
-            "language": "en"
-        },
-    )
+        requests.patch(
+            sb_url("pp_users"),
+            headers=SUPABASE_HEADERS,
+            params={
+                "telegram_id": f"eq.{telegram_id}"
+            },
+            json={
+                "language": "en"
+            },
+        )
 
-    requests.delete(
-        sb_url("pp_messages"),
-        headers=SUPABASE_HEADERS,
-        params={
-            "telegram_id": f"eq.{telegram_id}"
-        },
-    )
+        requests.delete(
+            sb_url("pp_messages"),
+            headers=SUPABASE_HEADERS,
+            params={
+                "telegram_id": f"eq.{telegram_id}"
+            },
+        )
 
-    await update.message.reply_text(
+        await update.message.reply_text(
 """
 Language set to English.
 
@@ -510,43 +475,9 @@ What’s been stuck in your head lately?
 
 You can vent, overthink, obsess, rant, spiral or just talk honestly.
 """
-    )
+        )
 
-    return
-
-if normalized == "ES":
-
-    requests.patch(
-        sb_url("pp_users"),
-        headers=SUPABASE_HEADERS,
-        params={
-            "telegram_id": f"eq.{telegram_id}"
-        },
-        json={
-            "language": "es"
-        },
-    )
-
-    requests.delete(
-        sb_url("pp_messages"),
-        headers=SUPABASE_HEADERS,
-        params={
-            "telegram_id": f"eq.{telegram_id}"
-        },
-    )
-
-    await update.message.reply_text(
-"""
-Idioma cambiado a español.
-
-¿Qué es eso que no has podido sacar de tu cabeza últimamente?
-
-Puedes desahogarte, sobrepensar, obsesionarte o simplemente hablar sin filtro.
-"""
-    )
-
-    return
-
+        return
 
     if normalized == "ES":
 
@@ -573,7 +504,9 @@ Puedes desahogarte, sobrepensar, obsesionarte o simplemente hablar sin filtro.
 """
 Idioma cambiado a español.
 
-Ya puedes hablar normalmente.
+¿Qué es eso que no has podido sacar de tu cabeza últimamente?
+
+Puedes desahogarte, sobrepensar, obsesionarte o simplemente hablar sin filtro.
 """
         )
 
@@ -597,7 +530,7 @@ Ya puedes hablar normalmente.
 """
 You reached the free limit.
 
-Upgrade to DeepTalk Plus:
+Upgrade with:
 
 /premium
 """
