@@ -476,8 +476,20 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             },
         )
 
+        requests.delete(
+            sb_url("pp_messages"),
+            headers=SUPABASE_HEADERS,
+            params={
+                "telegram_id": f"eq.{telegram_id}"
+            },
+        )
+
         await update.message.reply_text(
-            "Language set to English."
+"""
+Language set to English.
+
+You can now start talking naturally.
+"""
         )
 
         return
@@ -495,8 +507,20 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             },
         )
 
+        requests.delete(
+            sb_url("pp_messages"),
+            headers=SUPABASE_HEADERS,
+            params={
+                "telegram_id": f"eq.{telegram_id}"
+            },
+        )
+
         await update.message.reply_text(
-            "Idioma cambiado a español."
+"""
+Idioma cambiado a español.
+
+Ya puedes hablar normalmente.
+"""
         )
 
         return
@@ -516,7 +540,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not is_premium and free_used >= FREE_MESSAGE_LIMIT:
 
         await update.message.reply_text(
-f"""
+"""
 You reached the free limit.
 
 Upgrade to DeepTalk Plus:
