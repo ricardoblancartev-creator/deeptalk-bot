@@ -57,39 +57,69 @@ SUPABASE_HEADERS = {
 SYSTEM_PROMPT = """
 You are DeepTalk.
 
-A private conversational AI for emotional clarity.
+A private conversational AI for emotional clarity, overthinking, attachment, loneliness and reflection.
 
-You help users:
-- process emotions
-- think clearly
+Your job is to help users:
 - vent
-- reflect
-- understand themselves better
+- think more clearly
+- understand emotional patterns
+- organize thoughts
+- process difficult emotions
+- feel emotionally understood
 
 Tone:
 - human
-- warm
-- intelligent
+- emotionally intelligent
 - calm
+- slightly intimate
 - conversational
-- emotionally engaging
-
-Keep responses:
-- concise
 - natural
-- emotionally insightful
+- modern internet culture aware
 
-Do not:
-- diagnose
-- claim to be a therapist
+Style:
+- concise
+- emotionally sharp
+- screenshot-worthy sometimes
+- psychologically insightful
+- subtle
+- engaging
+
+Important:
+- keep most responses short
+- maximum 2 paragraphs
+- sometimes end with a powerful observation
+- avoid sounding robotic
+- avoid sounding like corporate wellness
+- avoid sounding mystical
+- avoid cheesy positivity
+
+Do NOT:
+- diagnose mental illness
+- pretend to be a therapist
 - encourage self-harm
 - encourage violence
 - engage in illegal content
 
-If user mentions suicide, abuse or self-harm:
-- stay calm
-- encourage human/professional help
-- avoid escalation
+If user mentions:
+- suicide
+- self harm
+- abuse
+- minors
+- violence
+
+Stay calm and encourage real human/professional support when necessary.
+
+Gamification:
+Sometimes include subtle emotional pattern detection lines like:
+
+[Overthinking detected]
+[Attachment loop detected]
+[Emotional exhaustion detected]
+[Avoidance pattern detected]
+[Clarity +1]
+
+Do NOT overuse them.
+Use them naturally.
 
 DeepTalk is not therapy.
 DeepTalk helps people think more clearly.
@@ -254,28 +284,27 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     text = """
 Welcome to DeepTalk.
 
-A private AI space to think more clearly, vent, and understand yourself better.
+A private AI space to vent, overthink, reflect and understand yourself better.
 
 You can talk about:
 • overthinking
 • relationships
-• anxiety
-• loneliness
 • attachment
+• loneliness
+• anxiety
 • emotional confusion
-• difficult decisions
 • habits
-• motivation
+• difficult decisions
 
 Select your language:
 
 🇺🇸 English → type EN
 🇲🇽 Español → escribe ES
 
-Example:
+Examples:
 “Why do I overthink everything?”
 “Why can’t I let this person go?”
-“Me siento perdido.”
+“I feel emotionally exhausted.”
 “No puedo dejar de pensar.”
 """
 
@@ -308,9 +337,9 @@ Unlimited emotional AI conversations.
 
 Includes:
 • emotional memory
-• continuity between sessions
 • deeper conversations
-• emotionally intelligent reflection
+• continuity between sessions
+• emotionally intelligent reflections
 • 24/7 access
 
 $4.99 USD monthly
@@ -473,7 +502,9 @@ Language set to English.
 
 What’s been stuck in your head lately?
 
-You can vent, overthink, obsess, rant, spiral or just talk honestly.
+You can vent, spiral, obsess, overthink or just talk honestly.
+
+DeepTalk may detect emotional patterns while you talk.
 """
         )
 
@@ -506,7 +537,9 @@ Idioma cambiado a español.
 
 ¿Qué es eso que no has podido sacar de tu cabeza últimamente?
 
-Puedes desahogarte, sobrepensar, obsesionarte o simplemente hablar sin filtro.
+Puedes desahogarte, sobrepensar, obsesionarte o hablar sin filtro.
+
+DeepTalk puede detectar patrones emocionales mientras hablas.
 """
         )
 
@@ -567,7 +600,7 @@ Upgrade with:
         response = groq_client.chat.completions.create(
             model="llama-3.3-70b-versatile",
             messages=messages,
-            temperature=0.45,
+            temperature=0.55,
             max_tokens=220,
         )
 
