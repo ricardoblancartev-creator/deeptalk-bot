@@ -587,57 +587,57 @@ Upgrade with:
 
     try:
 
-    recent_messages = get_recent_messages(telegram_id)
+        recent_messages = get_recent_messages(telegram_id)
 
-    language_instruction = ""
+        language_instruction = ""
 
-    if language == "es":
-        language_instruction = """
-Respond ONLY in natural Spanish.
+        if language == "es":
+            language_instruction = """
+    Respond ONLY in natural Spanish.
 
-Understand Mexican slang naturally.
+    Understand Mexican slang naturally.
 
-Never mention language barriers.
+    Never mention language barriers.
 
-Understand:
-- mota = marijuana
-- wey = dude
-- neta = honestly
-- pedo = situation/problem
-"""
+    Understand:
+    - mota = marijuana
+    - wey = dude
+    - neta = honestly
+    - pedo = situation/problem
+    """
 
-    if language == "en":
-        language_instruction = """
-Respond ONLY in natural English.
-"""
+        if language == "en":
+            language_instruction = """
+    Respond ONLY in natural English.
+    """
 
-    messages = [{
-        "role": "system",
-        "content": SYSTEM_PROMPT + "\n" + language_instruction
-    }]
+        messages = [{
+            "role": "system",
+            "content": SYSTEM_PROMPT + "\n" + language_instruction
+        }]
 
-    messages.extend(recent_messages)
+        messages.extend(recent_messages)
 
-    response = groq_client.chat.completions.create(
-        model="llama-3.3-70b-versatile",
-        messages=messages,
-        temperature=0.55,
-        max_tokens=220,
-    )
+        response = groq_client.chat.completions.create(
+            model="llama-3.3-70b-versatile",
+            messages=messages,
+            temperature=0.55,
+            max_tokens=220,
+        )
 
-    reply = response.choices[0].message.content
+        reply = response.choices[0].message.content
 
-    save_message(
-        telegram_id,
-        username,
-        "assistant",
-        reply
-    )
+        save_message(
+            telegram_id,
+            username,
+            "assistant",
+            reply
+        )
 
-    if not is_premium:
-        increment_free_messages(telegram_id)
+        if not is_premium:
+            increment_free_messages(telegram_id)
 
-    await update.message.reply_text(reply)
+        await update.message.reply_text(reply)
 
 
     except Exception as e:
