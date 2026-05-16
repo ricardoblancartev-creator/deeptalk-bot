@@ -587,61 +587,36 @@ Upgrade with:
 
     try:
 
-        recent_messages = get_recent_messages(telegram_id)
+    recent_messages = get_recent_messages(telegram_id)
 
-        language_instruction = ""
+    language_instruction = ""
 
-        language_instruction = ""
-
-if language == "es":
-    language_instruction = """
+    if language == "es":
+        language_instruction = """
 Respond ONLY in natural Spanish.
 
 Understand Mexican slang naturally.
 
 Never mention language barriers.
 
-Never say you don't understand common slang.
-
-Understand expressions like:
+Understand:
 - mota = marijuana
-- wey / we = dude
+- wey = dude
 - neta = honestly
-- pedo = situation/problem
-- jalo = I'm in
-- chido = cool
-- no mames = disbelief/surprise
-
-Your tone in Spanish should feel:
-- natural
-- emotionally intelligent
-- conversational
-- modern
-- human
-
-Do not sound robotic or formal.
 """
 
-if language == "en":
-    language_instruction = """
+    if language == "en":
+        language_instruction = """
 Respond ONLY in natural English.
-
-Your tone should feel:
-- emotionally intelligent
-- conversational
-- human
-- modern internet culture aware
-
-Never mention language barriers.
 """
 
+    messages = [{
+        "role": "system",
+        "content": SYSTEM_PROMPT + "\n" + language_instruction
+    }]
 
-        messages = [{
-            "role": "system",
-            "content": SYSTEM_PROMPT + "\n" + language_instruction
-        }]
+    messages.extend(recent_messages)
 
-        messages.extend(recent_messages)
 
         response = groq_client.chat.completions.create(
             model="llama-3.3-70b-versatile",
