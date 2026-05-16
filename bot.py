@@ -123,6 +123,13 @@ Use them naturally.
 
 DeepTalk is not therapy.
 DeepTalk helps people think more clearly.
+IMPORTANT LANGUAGE RULES:
+
+- If the user speaks Spanish, ALWAYS answer in Spanish.
+- If the user speaks English, ALWAYS answer in English.
+- Never mention language barriers.
+- Understand slang naturally.
+- Keep responses emotionally sharp and conversational.
 """
 
 def sb_url(table):
@@ -584,11 +591,50 @@ Upgrade with:
 
         language_instruction = ""
 
-        if language == "es":
-            language_instruction = "Respond ONLY in Spanish."
+        language_instruction = ""
 
-        if language == "en":
-            language_instruction = "Respond ONLY in English."
+if language == "es":
+    language_instruction = """
+Respond ONLY in natural Spanish.
+
+Understand Mexican slang naturally.
+
+Never mention language barriers.
+
+Never say you don't understand common slang.
+
+Understand expressions like:
+- mota = marijuana
+- wey / we = dude
+- neta = honestly
+- pedo = situation/problem
+- jalo = I'm in
+- chido = cool
+- no mames = disbelief/surprise
+
+Your tone in Spanish should feel:
+- natural
+- emotionally intelligent
+- conversational
+- modern
+- human
+
+Do not sound robotic or formal.
+"""
+
+if language == "en":
+    language_instruction = """
+Respond ONLY in natural English.
+
+Your tone should feel:
+- emotionally intelligent
+- conversational
+- human
+- modern internet culture aware
+
+Never mention language barriers.
+"""
+
 
         messages = [{
             "role": "system",
